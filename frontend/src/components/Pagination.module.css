@@ -1,0 +1,32 @@
+.pagination {
+  display: flex;
+  justify-content: center; /* Центрируем пагинацию по горизонтали */
+  margin-top: 20px; /* Отступ от нижних карточек */
+  margin-bottom: 40px; /* Дополнительный нижний отступ */
+}
+
+.pageItem {
+  margin: 0 5px;
+}
+
+.active {
+  font-weight: bold;
+}
+
+.pageLink {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.pageLink:hover {
+  background-color: #0056b3;
+}
+
+.pageLink.active {
+  background-color: #0056b3;
+  cursor: default;
+}

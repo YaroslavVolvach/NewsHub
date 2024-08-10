@@ -1,0 +1,19 @@
+/* src/components/ArticleList.module.css */
+
+.articleListContainer {
+  padding: 16px;
+}
+
+.articleList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px; /* Расстояние между карточками */
+}
+
+.articleCardWrapper {
+  border: 1px solid #ddd; /* Граница вокруг контейнера карточек */
+  border-radius: 8px;
+  padding: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Тень для визуального отделения */
+}

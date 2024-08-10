@@ -1,0 +1,45 @@
+/* src/components/ArticleCard.module.css */
+
+.articleCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.articleTitle {
+  font-size: 1.2em;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.articleContent {
+  flex: 1;
+}
+
+.articleImage {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: block;
+  object-fit: cover;
+  margin: 0 auto;
+}
+
+.detailButton {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  cursor: pointer;
+}
