@@ -1,5 +1,4 @@
-// src/pages/article/[id].tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import {
   Container,
@@ -16,11 +15,26 @@ import { useArticle } from '@/hooks/usePosts';
 import { useUpsertArticle } from '@/hooks/useUpsertArticle';
 import { useDeleteArticle } from '@/hooks/useDeleteArticle';
 import { Article } from '@/types';
+import Link from 'next/link';
 
 const ArticleDetail: React.FC = () => {
   const router = useRouter();
   const { id } = router.query;
   const articleId = id ? parseInt(id as string, 10) : null;
+  const [token, setToken] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  // Get token from localStorage and admin status
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedToken = window.localStorage.getItem('token');
+      if (typeof storedToken === 'string') {
+        setToken(storedToken);
+      }
+      const adminStatus = localStorage.getItem('isAdmin') === 'true';
+      setIsAdmin(adminStatus);
+    }
+  }, []);
 
   const { data: article, error, isLoading } = useArticle(articleId);
   const {
@@ -38,7 +52,7 @@ const ArticleDetail: React.FC = () => {
     },
   });
 
-  const updateArticleMutation = useUpsertArticle();
+  const updateArticleMutation = useUpsertArticle({ token });
   const deleteArticleMutation = useDeleteArticle();
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -46,58 +60,66 @@ const ArticleDetail: React.FC = () => {
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const onSubmit = (data: Article) => {
-    if (!article) return; // Prevent submission if no article data is available
+  const onSubmit = useCallback(
+    (data: Article) => {
+      if (!article) return;
 
-    setIsUpdating(true);
-    setUpdateError(null); // Reset previous error
+      setIsUpdating(true);
+      setUpdateError(null);
 
-    updateArticleMutation.mutate(
-      { ...article, ...data },
+      updateArticleMutation.mutate(
+        { ...article, ...data },
+        {
+          onSuccess: () => {
+            setIsUpdating(false);
+            router.push('/');
+          },
+          onError: (error: Error) => {
+            console.error('Error updating article:', error);
+            setIsUpdating(false);
+            setUpdateError('Failed to update the article. Please try again.');
+          },
+        }
+      );
+    },
+    [article, updateArticleMutation, router]
+  );
+
+  const handleDelete = useCallback(() => {
+    if (!article || !token) return;
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    deleteArticleMutation.mutate(
+      { articleId: article.id, token },
       {
         onSuccess: () => {
-          setIsUpdating(false);
-          router.push('/'); // Redirect after successful update
+          setIsDeleting(false);
+          router.push('/');
         },
         onError: (error: Error) => {
-          console.error('Error updating article:', error);
-          setIsUpdating(false);
-          setUpdateError('Failed to update the article. Please try again.');
+          console.error('Error deleting article:', error);
+          setIsDeleting(false);
+          setDeleteError('Failed to delete the article. Please try again.');
         },
       }
     );
-  };
+  }, [article, deleteArticleMutation, token, router]);
 
-  const handleDelete = () => {
-    if (!article) return; // Prevent deletion if no article data is available
-
-    setIsDeleting(true);
-    setDeleteError(null); // Reset previous error
-
-    deleteArticleMutation.mutate(article.id, {
-      onSuccess: () => {
-        setIsDeleting(false);
-        router.push('/'); // Redirect after successful deletion
-      },
-      onError: (error: Error) => {
-        console.error('Error deleting article:', error);
-        setIsDeleting(false);
-        setDeleteError('Failed to delete the article. Please try again.');
-      },
-    });
-  };
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (article) {
-      reset(article); // Update form values when article data changes
+      reset(article);
     }
   }, [article, reset]);
 
   if (isLoading) return <div>Loading...</div>;
+
   if (error) {
     console.error('Error loading article:', error);
     return <div>Error loading article.</div>;
   }
+
   if (!article) return <div>No article found.</div>;
 
   return (
@@ -111,38 +133,80 @@ const ArticleDetail: React.FC = () => {
               alt={article.title}
             />
             <Card.Body>
-              <Card.Title>{article.title}</Card.Title>
-              <Card.Text>{article.description}</Card.Text>
-              <Form onSubmit={handleSubmit(onSubmit)}>
-                <Form.Group controlId="formTitle">
-                  <Form.Label>Title</Form.Label>
-                  <Form.Control
-                    type="text"
-                    {...register('title', { required: true })}
-                    isInvalid={!!errors.title}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    Title is required.
-                  </Form.Control.Feedback>
-                </Form.Group>
+              {!isAdmin && (
+                <>
+                  <Card.Title>{article.title}</Card.Title>
+                  <Card.Text>{article.description}</Card.Text>
+                </>
+              )}
+              {article.link && (
+                <Link
+                  href={article.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="d-block mt-2"
+                >
+                  Read More
+                </Link>
+              )}
+              {isAdmin && (
+                <Form onSubmit={handleSubmit(onSubmit)}>
+                  <Form.Group controlId="formTitle">
+                    <Form.Label>Title</Form.Label>
+                    <Form.Control
+                      type="text"
+                      {...register('title', { required: 'Title is required' })}
+                      isInvalid={!!errors.title}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.title?.message}
+                    </Form.Control.Feedback>
+                  </Form.Group>
 
-                <Form.Group controlId="formDescription">
-                  <Form.Label>Description</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={3}
-                    {...register('description', { required: true })}
-                    isInvalid={!!errors.description}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    Description is required.
-                  </Form.Control.Feedback>
-                </Form.Group>
+                  <Form.Group controlId="formDescription">
+                    <Form.Label>Description</Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={3}
+                      {...register('description', {
+                        required: 'Description is required',
+                      })}
+                      isInvalid={!!errors.description}
+                    />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.description?.message}
+                    </Form.Control.Feedback>
+                  </Form.Group>
 
-                {updateError && <Alert variant="danger">{updateError}</Alert>}
+                  {updateError && <Alert variant="danger">{updateError}</Alert>}
 
-                <Button variant="primary" type="submit" disabled={isUpdating}>
-                  {isUpdating ? (
+                  <Button variant="primary" type="submit" disabled={isUpdating}>
+                    {isUpdating ? (
+                      <>
+                        <Spinner
+                          as="span"
+                          animation="border"
+                          size="sm"
+                          role="status"
+                          aria-hidden="true"
+                        />
+                        Updating...
+                      </>
+                    ) : (
+                      'Update Article'
+                    )}
+                  </Button>
+                </Form>
+              )}
+
+              {isAdmin && (
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="mt-3"
+                >
+                  {isDeleting ? (
                     <>
                       <Spinner
                         as="span"
@@ -151,35 +215,13 @@ const ArticleDetail: React.FC = () => {
                         role="status"
                         aria-hidden="true"
                       />
-                      Updating...
+                      Deleting...
                     </>
                   ) : (
-                    'Update Article'
+                    'Delete Article'
                   )}
                 </Button>
-              </Form>
-              {deleteError && <Alert variant="danger">{deleteError}</Alert>}
-              <Button
-                variant="danger"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="mt-3"
-              >
-                {isDeleting ? (
-                  <>
-                    <Spinner
-                      as="span"
-                      animation="border"
-                      size="sm"
-                      role="status"
-                      aria-hidden="true"
-                    />
-                    Deleting...
-                  </>
-                ) : (
-                  'Delete Article'
-                )}
-              </Button>
+              )}
             </Card.Body>
           </Card>
         </Col>

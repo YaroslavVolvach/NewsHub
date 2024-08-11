@@ -1,56 +1,113 @@
-import { useForm } from 'react-hook-form';
-import { useUpsertArticle } from '@/hooks/useUpsertArticle';
-import { Article } from '../types';
+import React from 'react';
+import styles from './ArticleForm.module.css';
 
-const ArticleForm = ({ article }: { article?: Article }) => {
-  const { register, handleSubmit } = useForm<Article>({
-    defaultValues: article || {
-      title: '',
-      link: '',
-      description: '',
-      publication_date: '',
-      image_url: '',
-    },
-  });
-  const mutation = useUpsertArticle();
+interface ArticleFormProps {
+  title: string;
+  link: string;
+  description: string;
+  publicationDate: string;
+  imageUrl: string;
+  onTitleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLinkChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onDescriptionChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  onPublicationDateChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (e: React.FormEvent) => void;
+  isSubmitting: boolean;
+  error: string | null;
+}
 
-  const onSubmit = (data: Article) => {
-    mutation.mutate(data);
-  };
-
+const ArticleForm: React.FC<ArticleFormProps> = ({
+  title,
+  link,
+  description,
+  publicationDate,
+  imageUrl,
+  onTitleChange,
+  onLinkChange,
+  onDescriptionChange,
+  onPublicationDateChange,
+  onImageUrlChange,
+  onSubmit,
+  isSubmitting,
+  error,
+}) => {
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <div className="mb-3">
-        <label className="form-label">Title</label>
-        <input type="text" className="form-control" {...register('title')} />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Link</label>
-        <input type="url" className="form-control" {...register('link')} />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Description</label>
-        <textarea
-          className="form-control"
-          {...register('description')}
-        ></textarea>
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Publication Date</label>
-        <input
-          type="datetime-local"
-          className="form-control"
-          {...register('publication_date')}
-        />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Image URL</label>
-        <input type="url" className="form-control" {...register('image_url')} />
-      </div>
-      <button type="submit" className="btn btn-primary">
-        Submit
-      </button>
-    </form>
+    <div className={styles.formWrapper}>
+      <h3 className={styles.formTitle}>Create Article</h3>
+      <form onSubmit={onSubmit} className={styles.formContainer}>
+        <div className={styles.formGroup}>
+          <label htmlFor="title" className={styles.formLabel}>
+            Title
+          </label>
+          <input
+            id="title"
+            type="text"
+            value={title}
+            onChange={onTitleChange}
+            className={styles.formInput}
+            required
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="link" className={styles.formLabel}>
+            Link
+          </label>
+          <input
+            id="link"
+            type="text"
+            value={link}
+            onChange={onLinkChange}
+            className={styles.formInput}
+            required
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="description" className={styles.formLabel}>
+            Description
+          </label>
+          <textarea
+            id="description"
+            value={description}
+            onChange={onDescriptionChange}
+            className={styles.formTextarea}
+            required
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="publicationDate" className={styles.formLabel}>
+            Publication Date
+          </label>
+          <input
+            id="publicationDate"
+            type="date"
+            value={publicationDate}
+            onChange={onPublicationDateChange}
+            className={styles.formInput}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="imageUrl" className={styles.formLabel}>
+            Image URL
+          </label>
+          <input
+            id="imageUrl"
+            type="text"
+            value={imageUrl}
+            onChange={onImageUrlChange}
+            className={styles.formInput}
+          />
+        </div>
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit'}
+        </button>
+        {error && <p className={styles.errorMessage}>{error}</p>}
+      </form>
+    </div>
   );
 };
 

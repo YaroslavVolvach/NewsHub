@@ -1,4 +1,3 @@
-// src/components/ArticleCard.tsx
 import React from 'react';
 import styles from './ArticleCard.module.css';
 import { Article } from '../types';
@@ -9,19 +8,15 @@ interface ArticleCardProps {
 
 const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
   return (
-    <div className={styles.articleCard}>
-      {article.image_url && (
-        <img
-          src={article.image_url}
-          alt={article.title}
-          className={styles.articleImage}
-        />
-      )}
-      <h2 className={styles.articleTitle}>{article.title}</h2>
-      <p className={styles.articleContent}>{article.description}</p>
-      <a href={`/article/${article.id}`} className={styles.detailButton}>
-        Article Detail
-      </a>
+    <div className={styles.articleListItem}>
+      <img src={article.image_url} alt={article.image_url} />
+      <div className={styles.articleCardContent}>
+        <h3 className={styles.articleCardTitle}>{article.title}</h3>
+        <p className={styles.articleCardDescription}>{article.description}</p>
+        <a href={`article/${article.id}`} className={styles.articleCardLink}>
+          Detail
+        </a>
+      </div>
     </div>
   );
 };

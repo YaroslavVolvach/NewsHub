@@ -4,47 +4,46 @@ import {
   UseMutationOptions,
   UseMutationResult,
 } from '@tanstack/react-query';
-import { useState } from 'react';
 import axios from 'axios';
+import refreshAuthLogic from '@/utils/refresh-token';
+import { useState } from 'react';
 
-const BaseAPI = process.env.NEXT_PUBLIC_API_BASE_URL;
+const BaseAPI = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
-// Function to delete an article
-const deleteArticle = async (articleId: number): Promise<void> => {
-  await axios.delete(`${BaseAPI}/api/articles/${articleId}/`);
+const deleteArticle = async (articleId: number, token: string) => {
+  try {
+    const { status } = await axios.delete(
+      `${BaseAPI}/api/articles/${articleId}/`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (status === 401) {
+      refreshAuthLogic();
+    }
+  } catch (error) {
+    throw new Error('Failed to delete the article');
+  }
 };
 
-// Hook for deleting an article
-export const useDeleteArticle = (
-  options: UseMutationOptions<void, Error, number> = {}
-) => {
+export const useDeleteArticle = () => {
   const queryClient = useQueryClient();
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const mutation = useMutation({
-    mutationFn: deleteArticle,
-    ...options,
-    onMutate: () => {
-      setIsDeleting(true); // Start loading
-    },
-    onSuccess: (data, variables, context) => {
-      // Invalidate 'articles' query to refresh the list
+  return useMutation({
+    mutationFn: ({ articleId, token }: { articleId: number; token: string }) =>
+      deleteArticle(articleId, token),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['articles'] });
-
-      // Call the user-defined onSuccess handler if provided
-      options.onSuccess?.(data, variables, context);
-    },
-    onError: (error, variables, context) => {
-      // Call the user-defined onError handler if provided
-      options.onError?.(error, variables, context);
-    },
-    onSettled: () => {
-      setIsDeleting(false); // End loading
     },
   });
-
-  return {
-    ...mutation,
-    isDeleting,
-  };
 };
+
+interface UseDeleteArticleOptions
+  extends UseMutationOptions<
+    void,
+    Error,
+    { articleId: number; token: string }
+  > {}

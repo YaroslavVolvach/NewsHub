@@ -6,41 +6,74 @@ import {
 } from '@tanstack/react-query';
 import axios from 'axios';
 import { Article } from '../types';
+import refreshAuthLogic from '@/utils/refresh-token';
 import { useState } from 'react';
 
-const BaseAPI = process.env.NEXT_PUBLIC_API_BASE_URL;
+const BaseAPI = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
-const updateArticle = async (article: Article): Promise<Article> => {
-  const { data } = await axios.put<Article>(
+const updateArticle = async (
+  article: Article,
+  token: string = ''
+): Promise<Article> => {
+  let { data, status } = await axios.put<Article>(
     `${BaseAPI}/api/articles/${article.id}/`,
-    article
+    article,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
   );
+
+  if (status === 401) {
+    refreshAuthLogic();
+  }
   return data;
 };
 
-const createArticle = async (article: Article): Promise<Article> => {
-  const { data } = await axios.post<Article>(
+const createArticle = async (
+  article: Article,
+  token: string = ''
+): Promise<Article> => {
+  const { data, status } = await axios.post<Article>(
     `${BaseAPI}/api/articles/`,
-    article
+    article,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
   );
+  if (status === 401) {
+    refreshAuthLogic();
+  }
   return data;
 };
 
-const upsertArticle = async (article: Article): Promise<Article> => {
-  return article.id ? updateArticle(article) : createArticle(article);
+const upsertArticle = async (
+  article: Article,
+  token: string = ''
+): Promise<Article> => {
+  return article.id
+    ? updateArticle(article, token)
+    : createArticle(article, token);
 };
 
-export const useUpsertArticle = (
-  options: UseMutationOptions<Article, Error, Article> = {}
-) => {
+interface UseUpsertArticleOptions
+  extends UseMutationOptions<Article, Error, Article> {
+  token?: string;
+}
+
+export const useUpsertArticle = (options: UseUpsertArticleOptions = {}) => {
   const queryClient = useQueryClient();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: upsertArticle,
+    mutationFn: (article: Article) =>
+      upsertArticle(article, options.token || ''),
     ...options,
     onMutate: () => {
-      setIsUpdating(true); // Start loading
+      setIsUpdating(true);
     },
     onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['articles'] });
@@ -50,7 +83,7 @@ export const useUpsertArticle = (
       options.onError?.(error, variables, context);
     },
     onSettled: () => {
-      setIsUpdating(false); // End loading
+      setIsUpdating(false);
     },
   });
 

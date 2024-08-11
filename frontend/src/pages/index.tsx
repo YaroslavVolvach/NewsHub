@@ -1,5 +1,6 @@
 // src/pages/index.tsx
 import ArticleList from '@/components/ArticleList';
+import SortButtons from '@/components/SortButtons';
 import { useArticles } from '@/hooks/usePosts';
 import { useState } from 'react';
 import { Response } from '../types';
@@ -13,12 +14,27 @@ const defaultResponse: Response = {
 
 const HomePage = () => {
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('publication_date');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortTrigger, setSortTrigger] = useState(false);
+
+  const getSortedByValue = () => {
+    return sortOrder === 'desc' ? `-${sortBy}` : sortBy;
+  };
+
   const { data: response = defaultResponse, isLoading, error } = useArticles(
-    page
+    page,
+    getSortedByValue()
   );
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+  };
+
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+    setSortTrigger((prev) => !prev);
   };
 
   if (isLoading) return <p>Loading...</p>;
@@ -26,6 +42,7 @@ const HomePage = () => {
 
   return (
     <div>
+      <SortButtons onSortChange={handleSortChange} />
       <ArticleList
         response={response}
         currentPage={page}

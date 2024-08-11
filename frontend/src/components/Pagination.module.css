@@ -1,8 +1,8 @@
 .pagination {
   display: flex;
-  justify-content: center; /* Центрируем пагинацию по горизонтали */
-  margin-top: 20px; /* Отступ от нижних карточек */
-  margin-bottom: 40px; /* Дополнительный нижний отступ */
+  justify-content: center;
+  margin-top: 20px;
+  margin-bottom: 40px;
 }
 
 .pageItem {

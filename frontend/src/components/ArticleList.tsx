@@ -1,4 +1,3 @@
-// src/components/ArticleList.tsx
 import React from 'react';
 import ArticleCard from './ArticleCard';
 import Pagination from './Pagination';
@@ -17,7 +16,7 @@ const ArticleList: React.FC<ArticleListProps> = ({
   onPageChange,
 }) => {
   const { count, results } = response;
-  const totalPages = Math.ceil(count / 10); // Assuming 10 articles per page
+  const totalPages = Math.ceil(count / 10);
 
   return (
     <div className={styles.articleListContainer}>
